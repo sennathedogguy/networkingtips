@@ -1,0 +1,574 @@
+1. Hostname instellen
+Ga naar privileged mode: enable
+Configureer de hostname:
+
+configure terminal
+hostname CE_SW01
+
+2. Beveilig toegang via de consolepoort:
+
+Switch(config)# line console 0
+Switch(config-line)# password JouwConsoleWachtwoord
+Switch(config-line)# login
+Switch(config-line)# exit
+
+enable secret (WW)
+Zorg dat wachtwoorden niet leesbaar zijn:
+ 
+service password-encryption
+
+Login-banner configureren
+Maak eerst in Notepad:
+ 
+
+ 
+
+***********************************************************
+Kluskoning BV.
+Alleen toegang met nadrukkelijke toestemming ICT-Beheer!
+Hostname: Klusko_SW01
+Naam Beheerder(s): [Jouw Naam]
+***********************************************************
+Kopieer en plak in de CLI:
+ 
+commnd
+ 
+
+banner motd #
+***********************************************************
+case.
+Alleen toegang met nadrukkelijke toestemming ICT-Beheer!
+Hostname: ce_SW01
+Naam Beheerder(s): Mikai
+***********************************************************#
+VLAN’s configureren
+Maak en benoem de VLAN’s:
+ 
+
+ 
+
+vlan (nummer van vlan)
+name Servers
+exit
+vlan (nummer van vlan)
+name Clients
+exit
+vlan nummer van vlan)
+name Management
+exit
+
+
+wijs de poorten toe aan de vlans
+
+interface range fa2/1-8
+switchport mode access
+switchport access vlan (nummer vlan) 
+exit
+
+(POORTEN DICHT = er IN (interface range) (, shutdown, EXIT)
+
+herhaal voor de rest 
+
+
+TRUNK
+interface Fa2/0/24
+ switchport trunk encapsulation dot1q     ← zet trunking op dot1q
+ switchport mode trunk                    ← zet poort in trunk mode
+ switchport trunk allowed vlan 7,14,95    ← sta alleen deze VLANs toe
+
+✅ show trunk interfaces
+
+write mem
+SVI configureren voor VLAN management
+Configureer het management IP-adres:
+ 
+
+interface vlan <management Vlan nummer>
+ip address <IP-ADRES> <SUBNETMASKER> (bijna altijd 255.255.255.240)
+no shutdown
+exit
+
+ip default-gateway <GATEWAY-IP> (vaak firewall ip)
+
+✅show ip interface brief
+
+
+SSH
+JeSwitchNaam(config)# ip domain-name jouwdomein.local
+
+JeSwitchNaam(config)# crypto key generate rsa
+
+1024
+
+JeSwitchNaam(config)# username jegebruikername secret jeWachtwoord
+JeSwitchNaam(config)# line vty 0 4
+JeSwitchNaam(config-line)# transport input ssh
+JeSwitchNaam(config-line)# login local
+JeSwitchNaam(config-line)# exit
+
+
+FORTI
+
+
+Stap 2: Instellen van de hostnaam en banner
+Ga naar System > Settings
+
+Stel de hostname in: CE_FGT01
+
+
+rep messages extended vieuw
+config system global
+    set pre-login-banner enable
+    set post-login-banner enable
+end
+Zet onder Banner de login-banner:
+
+
+***********************************************************
+CasaEase BV.
+Alleen toegang met nadrukkelijke toestemming ICT-Beheer!
+Hostname: CE_FGT01
+Naam Beheerder(s): [Jouw Naam]
+***********************************************************
+
+
+Stap 3: Interfaces configureren
+Ga naar Network > Interfaces
+
+Voeg per VLAN een de trunk poort toe die je eerst uit lan verwijderd
+Klik op Create New > Interface
+
+Name: VLAN_7_Servers
+
+Interface: TRUNKPOORT
+
+Type: VLAN
+
+VLAN ID: NUMMER
+
+IP/Netmask: 10.10.100.254/24
+
+Administrative Access: alleen ping (en eventueel HTTPS/SSH voor Management als vereist)
+
+Herhaal voor:
+
+VLAN_14_Clients → VLAN ID 14 → IP: 10.10.114.254/23
+
+VLAN_95_Management → VLAN ID 95 → IP: 10.10.149.14/28 (➡️ alleen hier SSH/HTTPS aanzetten!)
+
+
+
+Stap 4: Trunk instellen op de fysieke poort (naar switch)
+Zorg dat port2 de trunk is
+
+
+
+
+FORTI POLICY
+Ga naar Policy & Objects > IPv4 Policy en maak regels:
+
+ Clients → Internet
+Name: Clients_to_Internet
+
+Incoming Interface: vlan(CLIENTS_VLAN)
+
+Outgoing Interface: wan1
+
+Application Control: Blokkeer Netflix & Dropbox!
+
+Klik op Application Control.
+
+Kies "Create New", zoek naar "Netflix" en "Dropbox" en blokkeer deze.
+dns filter en web!
+Enable Logging: ✅ Aanvinken
+
+
+
+
+Name: Servers_to_Internet
+
+Incoming Interface: vlan(SERVERS_VLAN)
+
+Outgoing Interface: wan1
+
+Action: ✅ Accept
+
+Service: ALL
+
+Enable Logging: ✅ Aanvinken
+
+Klik op OK.
+
+
+
+clients_to_ management
+Van: VLAN Clients
+
+Naar: VLAN Management
+
+Toegestane protocollen: HTTP, HTTPS, ICMP, SSH
+
+nat uit
+Actie: Toestaan (Allow)
+
+
+
+Van: VLAN Clients
+
+Naar: VLAN Servers
+
+Protocollen: Any
+
+Actie: Toestaan
+
+
+
+Name: Management_to_Internet_NTP
+
+Incoming Interface: vlan(MANAGEMENT_VLAN)
+
+Outgoing Interface: wan1
+
+Service: NTP (UDP/123)
+
+Action: ✅ Accept
+
+NAT: ✅ Aan
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+Name: Clients_to_Management_Beheer
+
+Incoming Interface: vlan(CLIENTS_VLAN)
+
+Outgoing Interface: vlan(MANAGEMENT_VLAN)
+
+Service: HTTP, HTTPS, ICMP, SSH
+
+Action: ✅ Accept
+
+NAT: ❌ Uit
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+
+Name: Clients_to_Servers
+
+Incoming Interface: vlan(CLIENTS_VLAN)
+
+Outgoing Interface: vlan(SERVERS_VLAN)
+
+Service: ALL
+
+Action: ✅ Accept
+
+NAT: ❌ Uit
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+Name: Servers_to_Clients_and_Management
+
+Incoming Interface: vlan(SERVERS_VLAN)
+
+Outgoing Interface: vlan(CLIENTS_VLAN), vlan(MANAGEMENT_VLAN)
+
+Service: ALL
+
+Action: ✅ Accept
+
+NAT: ❌ Uit
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+Name: Management_to_Servers
+
+Incoming Interface: vlan(MANAGEMENT_VLAN)
+
+Outgoing Interface: vlan(SERVERS_VLAN)
+
+Service: ALL
+
+Action: ✅ Accept
+
+NAT: ❌ Uit
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+
+Clients_to_Internet_HTTP-HTTPS-DNS
+
+Servers_to_Internet
+
+Management_to_Internet_NTP
+
+Clients_to_Management_Beheer
+
+Clients_to_Servers
+
+Servers_to_Clients_and_Management
+
+Management_to_Servers
+
+
+
+Stap 6: DNS Forwarders instellen
+Ga naar Network > DNS
+
+Voeg deze toe als forwarders:
+
+172.16.0.5
+
+172.16.0.51
+
+Stap 7: Static route naar printernetwerk
+Ga naar Network > Static Routes
+
+Voeg een nieuwe toe:
+
+Destination: (bijv.) 10.10.160.0/24
+
+Gateway: (interne router/firewall IP)
+
+Interface: port2 of VLAN-interface afhankelijk van je setup
+
+
+
+
+1. Installatie van rollen
+1.1. Active Directory installeren
+Open Server Manager.
+
+Klik op Add Roles and Features.
+
+Selecteer de server waarop je Active Directory wilt installeren.
+
+Kies de rol: Active Directory Domain Services (AD DS).
+
+Na installatie: Klik op Promote this server to a domain controller.
+
+
+
+Kies Add a new forest en geef als domeinnaam: …....int
+
+Stel een Directory Services Restore Mode (DSRM) wachtwoord in.
+
+Voltooi de wizard en herstart de server.
+
+Documenteer het administrator-account met het ingestelde wachtwoord.
+
+
+1.2. DNS installeren
+Tijdens de installatie van AD wordt DNS meestal automatisch mee geïnstalleerd.
+
+Als dat niet gebeurt:
+
+Ga terug naar Add Roles and Features.
+
+Selecteer DNS Server en voltooi de wizard.
+
+
+1.3. DHCP installeren
+Opnieuw via Add Roles and Features.
+
+Kies de rol: DHCP Server.
+
+Volg de wizard en configureer de DHCP-scope later.
+
+2. Configuratie van DNS en DHCP
+2.1. Netwerkconfiguratie van de server
+Stel een statisch IP-adres in via Netwerkcentrum (of PowerShell).
+
+Voorzie de server van de juiste IP-configuratie volgens het netwerkontwerp.
+
+Server moet DNS én DHCP rol vervullen.
+
+
+
+2.2. DHCP-configuratie
+Open de DHCP Management Console.
+
+Maak een nieuwe scope aan:
+
+Geef een bereik van IP-adressen op voor clients.
+
+Stel subnetmasker, gateway en DNS-server (het IP van de domeincontroller) in.
+
+Clients in de VLAN moeten IP-adressen ontvangen uit deze scope.
+
+2.3. DNS-configuratie
+Zorg dat de DNS-server geen externe DNS-resolutie doet zonder tussenkomst.
+
+Pas forwarders aan naar een externe DNS-server volgens ontwerp (bijv. 8.8.8.8).
+
+Controleer of interne namen correct resolven.
+
+
+
+3. Active Directory Policies (Groepsbeleid)
+
+
+
+
+Op de domeincontroller (server met Active Directory rol) klik je op Start.
+
+Typ gpmc.msc en druk op Enter.
+
+Dit opent de Group Policy Management Console.
+
+Stap 2: Maak een nieuwe GPO voor niet-IT medewerkers
+Zoek in de linkerkolom je domeinnaam (bv. bedrijf.local).
+
+Klik met de rechtermuisknop op de OU waar je de GPO wilt linken (bijvoorbeeld de OU waar niet-IT medewerkers in zitten of maak er eerst een aan, zie stap 4).
+
+Kies Create a GPO in this domain, and Link it here.
+
+Geef de GPO een naam, bijvoorbeeld "Beperkingen Niet-IT"
+.
+
+Stap 3: Pas de GPO instellingen aan voor niet-IT medewerkers
+Rechtsklik op de nieuwe GPO en kies Edit.
+
+Dit opent de Group Policy Editor.
+
+Nu pas je de gewenste instellingen toe:
+
+Beperk toegang tot configuratiescherminstellingen (Tijd, geluid, muis, toetsenbord):
+Ga naar:
+User Configuration → Policies → Administrative Templates → Control Panel
+
+Zoek naar instellingen zoals Prohibit access to Control Panel and PC settings en zet deze aan.
+
+Voor specifieke instellingen als tijd, geluid, muis, toetsenbord kun je eventueel via de specifieke policies zoeken of met een custom ADM/ADMX template werken (standaard zijn die opties beperkt).
+
+Blokkeer Register Editor
+Ga naar:
+User Configuration → Policies → Administrative Templates → System
+
+Zet Prevent access to registry editing tools op Enabled.
+
+Blokkeer toegang tot Opdrachtprompt (cmd)
+Ga naar:
+User Configuration → Policies → Administrative Templates → System
+
+Zet Prevent access to the command prompt op Enabled.
+
+Blokkeer toegang tot PowerShell
+Dit kan via Software Restriction Policies of AppLocker:
+Ga naar:
+Computer Configuration → Policies → Windows Settings → Security Settings → Application Control Policies → AppLocker
+
+Maak regels aan om powershell.exe te blokkeren (dit is wat complexer en vereist wat extra configuratie).
+
+Stap 4: GPO maken voor alle medewerkers
+Maak een andere GPO, bijvoorbeeld "Algemene Beveiligingsinstellingen".
+
+Link deze aan de OU waar alle medewerkers in zitten (bijvoorbeeld de hoofddomein-OU).
+
+Pas de volgende instellingen toe:
+
+Zet guest account uit
+Ga naar:
+Computer Configuration → Policies → Windows Settings → Security Settings → Local Policies → Security Options
+
+Zet Accounts: Guest account status op Disabled.
+
+Forceer systeem niet te herstarten tijdens updates als er gebruikers ingelogd zijn
+Ga naar:
+Computer Configuration → Policies → Administrative Templates → Windows Components → Windows Update
+
+Zet No auto-restart with logged on users for scheduled automatic updates installations op Enabled.
+
+Stap 5: Koppel GPO’s aan de juiste OU’s
+Zorg dat je verschillende OU’s hebt voor IT en niet-IT (zie stap 4 hieronder).
+
+Link GPO "Beperkingen Niet-IT" aan de niet-IT OU.
+
+Link GPO "Algemene Beveiligingsinstellingen" aan de OU met alle medewerkers.
+
+Maak eventueel een aparte GPO voor IT gebruikers met andere instellingen.
+
+
+
+4. Organisatorische eenheden (OU’s) en gebruikers
+4.1 OU’s aanmaken in Active Directory Users and Computers (ADUC)
+Stap 1: Open ADUC
+Klik op Start.
+
+Typ dsa.msc en druk op Enter.
+
+Dit opent Active Directory Users and Computers.
+
+Stap 2: Maak de volgende OU’s aan
+Klik met de rechtermuisknop op je domeinnaam (bv. bedrijf.local).
+
+Kies New → Organizational Unit.
+
+Maak de volgende OU’s aan:
+
+Management
+
+IT-afdeling
+
+HR
+
+Marketing
+
+CSD
+
+
+CSD
+
+4.2. Gebruikers aanmaken
+Maak de volgende gebruikers aan in de juiste OU’s:
+
+Naam	Functie	OU
+Klaas van Dijk	CEO	Management
+Herman de Vries	Claims Manager	Management
+Kirsten Hoog	Systeembeheerder	IT-afdeling
+Jiske Peters	Netwerkingenieur	IT-afdeling
+Jessica Prins	HR Manager	HR
+Timo de Jong	Marketing Coördinator	Marketing
+Freek Linke	Klantenservicemedewerker	CSD
+
+Maak gebruikers aan met gebruikersnaam + wachtwoord.
+
+Wijs hen toe aan de juiste OU.
+
+Eventueel: stel wachtwoordbeleid in (verplicht wijzigen bij eerste login, etc.)
+
+5. Roaming profiles configureren
+Maak een gedeelde netwerklocatie aan voor profielen (bijv. \\server\profiles$).
+
+Geef de juiste machtigingen.
+
+In ADUC, voor elke gebruiker:
+
+Ga naar Profile tab.
+
+Stel in: \\server\profiles$\%username%
+
+Zorg dat gebruikersprofielen automatisch geladen worden bij aanmelden op een andere machine.
+
+6. Controle & testen
+Controleer of DHCP goed IP-adressen uitdeelt.
+
+Test of DNS werkt voor interne en externe namen.
+
+Meld je aan met gebruikersaccounts en kijk of policies en roaming profiles werken.
+
+Controleer of de juiste beperkingen gelden voor niet-IT personeel.

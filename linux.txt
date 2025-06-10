@@ -1,0 +1,51 @@
+Subnet = 192.168.1.0/24 (omdat je een /24 netwerk gebruikt, dus 255.255.255.0) EINDIGT ALTIJD OP .0 !!!
+Address = het IP uit je IP-plan voor Linux server
+Gateway = het ip van het Vlan waar de Linux server in zit (interface vlan ..)
+DNS = het IP van je Windows Server
+
+
+Subnet: 172.16.4.0/24
+Ip: 172.16.4.8
+Default gateway: 172.16.4.254
+Default name server: 172.16.4.5
+
+https://www.digitalocean.com/community/tutorials/install-wordpress-on-ubuntu
+
+Nieuwe gebruiker aanmaken
+sudo adduser gebruikersnaam
+
+
+Controleren of de gebruiker is aangemaakt
+cat /etc/passwd | grep gebruikersnaam
+
+
+Inloggen op een andere gebruiker
+su - gebruikersnaam
+
+
+Uitloggen en terugkeren naar de vorige gebruiker
+exit
+
+
+Een gebruiker beheerdersrechten geven
+sudo usermod -aG sudo gebruikersnaam
+
+
+Lijst van alle gebruikers weergeven
+cat /etc/passwd
+
+
+Een gebruiker verwijderen
+sudo deluser gebruikersnaam
+
+
+Een gebruiker en zijn home-map verwijderen
+sudo deluser --remove-home gebruikersnaam
+
+
+Controleren bij welke groepen een gebruiker hoort
+groups gebruikersnaam
+
+
+Een gebruiker aan een groep toevoegen
+sudo usermod -aG groepsnaam gebruikersnaam

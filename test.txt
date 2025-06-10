@@ -1,0 +1,42 @@
+✅ Switch:
+
+VLAN's correct geconfigureerd (show vlan brief)
+
+Management VLAN actief (show ip interface brief)
+
+Trunks correct (show interfaces trunk)
+
+SSH werkt (ssh admin@SWITCH_IP)
+
+✅ Firewall:
+
+VLAN interfaces actief (show system interface)
+
+Policies in juiste volgorde (show firewall policy)
+
+Logging ingeschakeld (show log setting)
+
+Beheer beperkt tot Management VLAN
+
+✅ Windows Server:
+
+Domein actief (nltest /dclist:DOMEINNAAM)
+
+DHCP leases worden uitgedeeld (Get-DhcpServerv4Lease)
+
+DNS werkt (nslookup google.com)
+
+GPO’s correct toegepast (gpresult /R)
+
+✅ Netwerk Testen:
+
+Ping van Client naar Server: ping SERVER_IP
+
+Ping naar internet (vanaf client): ping 8.8.8.8
+
+Controleer of Netflix geblokkeerd is (open in browser)
+
+
+Switch : show running-config (kopieren opslaan bijlagen)
+Firewall: backup file
+Windows: snapshot

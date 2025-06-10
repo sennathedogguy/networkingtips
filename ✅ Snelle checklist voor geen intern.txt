@@ -1,0 +1,90 @@
+✅ Snelle checklist voor geen internet vanuit VLAN Clients
+🔍 1. IP-instellingen op de client controleren
+Op een client-pc of VM in VLAN Clients:
+
+cmd
+Kopiëren
+Bewerken
+ipconfig /all
+Zorg dat je ziet:
+
+Instelling	Waarde moet zijn
+IP-adres	Binnen 10.10.114.0/23
+Subnetmasker	255.255.254.0
+Gateway	10.10.115.254 ✅
+DNS-server	10.10.100.1 of 8.8.8.8
+
+❌ Als je geen IP hebt of de gateway is verkeerd → check DHCP of stel het handmatig in.
+
+🔍 2. Ping-testen vanaf de client
+Open CMD op de client:
+
+bash
+Kopiëren
+Bewerken
+ping 10.10.115.254         ← (FortiGate in VLAN Clients)
+ping 8.8.8.8                ← (externe IP)
+nslookup google.com         ← (check DNS)
+Wat lukt?	Wat betekent dat?
+Alleen 10.10.115.254 werkt	Gateway werkt, maar NAT/firewall mist
+8.8.8.8 werkt niet	NAT/firewall/route-probleem
+nslookup faalt	DNS verkeerd ingesteld
+
+🔍 3. Controleer of je FortiGate-policy nog goed staat
+Ga in de GUI naar:
+Policy & Objects > IPv4 Policy
+
+Zorg dat de volgende policy bestaat en bovenaan staat (boven blockregels):
+
+Instelling	Waarde
+Incoming	VLAN_Clients
+Outgoing	WAN (bijv. wan1)
+Source	10.10.114.0/23
+Destination	all
+Service	ALL
+Action	ACCEPT
+NAT	✅ AAN
+
+❗ Als NAT uit staat, werkt internet niet, tenzij je FortiGate als router NAT-loos hebt geconfigureerd.
+
+🔍 4. Controleer routing (default route)
+Ga naar:
+Network > Static Routes
+
+Zorg dat je een default route (0.0.0.0/0) hebt die verwijst naar je WAN-interface (bijv. wan1) en dat de gateway daar klopt.
+
+🔍 5. Inspecteer de VLAN-interface zelf
+Ga naar: Network > Interfaces
+Controleer VLAN_Clients:
+
+IP = 10.10.115.254/23
+
+Role = LAN
+
+Status = ✅ UP
+
+DHCP = uit (of relay goed ingesteld)
+
+Tag = 14
+
+Interface = trunkpoort (bijv. port1)
+
+✅ Actieplan samengevat
+🔧 Client IP, gateway & DNS correct? → ipconfig
+
+📶 Ping naar FortiGate lukt?
+
+🌍 Firewall policy aanwezig & NAT aan?
+
+🌐 FortiGate heeft internet? → ping 8.8.8.8 vanuit FortiGate
+
+🛣️ Default route goed ingesteld?
+
+Als je wil, kun je output van ipconfig /all, ping-resultaten of screenshots delen (of beschrijven), dan kijk ik mee waar het blokkeert.
+
+
+
+
+
+
+

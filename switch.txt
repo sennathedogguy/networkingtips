@@ -1,0 +1,108 @@
+1. Hostname instellen
+Ga naar privileged mode: enable
+Configureer de hostname:
+
+configure terminal
+hostname CE_SW01
+
+2. Beveilig toegang via de consolepoort:
+
+Switch(config)# line console 0
+Switch(config-line)# password JouwConsoleWachtwoord
+Switch(config-line)# login
+Switch(config-line)# exit
+
+enable secret (WW)
+Zorg dat wachtwoorden niet leesbaar zijn:
+ 
+service password-encryption
+
+Login-banner configureren
+Maak eerst in Notepad:
+ 
+
+ 
+
+***********************************************************
+Kluskoning BV.
+Alleen toegang met nadrukkelijke toestemming ICT-Beheer!
+Hostname: Klusko_SW01
+Naam Beheerder(s): [Jouw Naam]
+***********************************************************
+Kopieer en plak in de CLI:
+ 
+commnd
+ 
+
+banner motd #
+***********************************************************
+case.
+Alleen toegang met nadrukkelijke toestemming ICT-Beheer!
+Hostname: ce_SW01
+Naam Beheerder(s): Mikai
+***********************************************************#
+VLAN’s configureren
+Maak en benoem de VLAN’s:
+ 
+
+ 
+
+vlan (nummer van vlan)
+name Servers
+exit
+vlan (nummer van vlan)
+name Clients
+exit
+vlan nummer van vlan)
+name Management
+exit
+
+
+wijs de poorten toe aan de vlans
+
+interface range fa2/1-8
+switchport mode access
+switchport access vlan (nummer vlan) 
+exit
+
+(POORTEN DICHT = er IN (interface range) (, shutdown, EXIT)
+
+herhaal voor de rest 
+
+
+TRUNK
+interface Fa2/0/24
+ switchport trunk encapsulation dot1q     
+ switchport mode trunk                    
+ switchport trunk allowed vlan 7,14,95    
+no shutdown
+✅ show trunk interfaces
+
+write mem
+SVI configureren voor VLAN management
+Configureer het management IP-adres:
+ 
+
+interface vlan <management Vlan nummer>
+ip address <IP-ADRES> <SUBNETMASKER> (bijna altijd 255.255.255.240)
+no shutdown
+exit
+
+ip default-gateway <GATEWAY-IP> (vaak firewall ip)
+
+✅show ip interface brief
+
+
+SSH
+JeSwitchNaam(config)# ip domain-name jouwdomein.local
+
+JeSwitchNaam(config)# crypto key generate rsa
+
+1024
+
+JeSwitchNaam(config)# username jegebruikername secret jeWachtwoord
+JeSwitchNaam(config)# line vty 0 4
+JeSwitchNaam(config-line)# transport input ssh
+JeSwitchNaam(config-line)# login local
+JeSwitchNaam(config-line)# exit
+

@@ -1,0 +1,242 @@
+FORTI
+
+
+Stap 2: Instellen van de hostnaam en banner
+Ga naar System > Settings
+
+Stel de hostname in: CE_FGT01
+
+
+rep messages extended vieuw
+config system global
+    set pre-login-banner enable
+    set post-login-banner enable
+end
+Zet onder Banner de login-banner:
+
+
+***********************************************************
+CasaEase BV.
+Alleen toegang met nadrukkelijke toestemming ICT-Beheer!
+Hostname: CE_FGT01
+Naam Beheerder(s): [Jouw Naam]
+***********************************************************
+
+
+Stap 3: Interfaces configureren
+Ga naar Network > Interfaces
+
+Voeg per VLAN een de trunk poort toe die je eerst uit lan verwijderd
+Klik op Create New > Interface
+
+Name: VLAN_7_Servers
+
+Interface: TRUNKPOORT
+
+Type: VLAN
+
+VLAN ID: NUMMER
+
+IP/Netmask: 10.10.100.254/24
+
+Administrative Access: alleen ping (en eventueel HTTPS/SSH voor Management als vereist)
+
+Herhaal voor:
+
+VLAN_14_Clients → VLAN ID 14 → IP: 10.10.114.254/23
+
+VLAN_95_Management → VLAN ID 95 → IP: 10.10.149.14/28 (➡️ alleen hier SSH/HTTPS aanzetten!)
+
+
+
+Stap 4: Trunk instellen op de fysieke poort (naar switch)
+Zorg dat port2 de trunk is
+
+
+
+
+FORTI POLICY
+Ga naar Policy & Objects > IPv4 Policy en maak regels:
+
+ Clients → Internet
+Name: Clients_to_Internet
+
+Incoming Interface: vlan(CLIENTS_VLAN)
+
+Outgoing Interface: wan1
+
+Application Control: Blokkeer Netflix & Dropbox!
+
+Klik op Application Control.
+
+Kies "Create New", zoek naar "Netflix" en "Dropbox" en blokkeer deze.
+dns filter en web!
+Enable Logging: ✅ Aanvinken
+
+
+
+
+Name: Servers_to_Internet
+
+Incoming Interface: vlan(SERVERS_VLAN)
+
+Outgoing Interface: wan1
+
+Action: ✅ Accept
+
+Service: ALL
+
+Enable Logging: ✅ Aanvinken
+
+Klik op OK.
+
+
+
+clients_to_ management
+Van: VLAN Clients
+
+Naar: VLAN Management
+
+Toegestane protocollen: HTTP, HTTPS, ICMP, SSH
+
+nat uit
+Actie: Toestaan (Allow)
+
+
+
+Van: VLAN Clients
+
+Naar: VLAN Servers
+
+Protocollen: Any
+
+Actie: Toestaan
+
+
+
+Name: Management_to_Internet_NTP
+
+Incoming Interface: vlan(MANAGEMENT_VLAN)
+
+Outgoing Interface: wan1
+
+Service: NTP (UDP/123)
+
+Action: ✅ Accept
+
+NAT: ✅ Aan
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+Name: Clients_to_Management_Beheer
+
+Incoming Interface: vlan(CLIENTS_VLAN)
+
+Outgoing Interface: vlan(MANAGEMENT_VLAN)
+
+Service: HTTP, HTTPS, ICMP, SSH
+
+Action: ✅ Accept
+
+NAT: ❌ Uit
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+
+Name: Clients_to_Servers
+
+Incoming Interface: vlan(CLIENTS_VLAN)
+
+Outgoing Interface: vlan(SERVERS_VLAN)
+
+Service: ALL
+
+Action: ✅ Accept
+
+NAT: ❌ Uit
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+Name: Servers_to_Clients_and_Management
+
+Incoming Interface: vlan(SERVERS_VLAN)
+
+Outgoing Interface: vlan(CLIENTS_VLAN), vlan(MANAGEMENT_VLAN)
+
+Service: ALL
+
+Action: ✅ Accept
+
+NAT: ❌ Uit
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+Name: Management_to_Servers
+
+Incoming Interface: vlan(MANAGEMENT_VLAN)
+
+Outgoing Interface: vlan(SERVERS_VLAN)
+
+Service: ALL
+
+Action: ✅ Accept
+
+NAT: ❌ Uit
+
+Enable Logging: ✅ Aangevinkt
+
+Klik op OK
+
+
+
+Clients_to_Internet_HTTP-HTTPS-DNS
+
+Servers_to_Internet
+
+Management_to_Internet_NTP
+
+Clients_to_Management_Beheer
+
+Clients_to_Servers
+
+Servers_to_Clients_and_Management
+
+Management_to_Servers
+
+
+
+Stap 6: DNS Forwarders instellen
+Ga naar Network > DNS
+
+Voeg deze toe als forwarders:
+
+172.16.0.5
+
+172.16.0.51
+
+Stap 7: Static route naar printernetwerk
+Ga naar Network > Static Routes
+
+Voeg een nieuwe toe:
+
+Destination: (bijv.) 10.10.160.0/24
+
+Gateway: (interne router/firewall IP)
+
+Interface: port2 of VLAN-interface afhankelijk van je setup
+
+
+
+

@@ -1,0 +1,154 @@
+Policy 1: Alleen toegang tot bepaalde onderdelen van het Configuratiescherm
+Stap-voor-stap:
+Dubbelklik op je GPO → Rechtermuisklik → Edit.
+
+Ga naar:
+User Configuration → Administrative Templates → Control Panel
+
+Zoek en dubbelklik op: "Prohibit access to Control Panel and PC settings"
+
+Zet op: Enabled
+
+Zoek en dubbelklik op: "Show only specified Control Panel items"
+
+Zet op: Enabled
+
+Klik op Show en voeg onderstaande regels toe:
+
+arduino
+Kopiëren
+Bewerken
+Microsoft.DateAndTime
+Microsoft.Sound
+Microsoft.Mouse
+Microsoft.Keyboard
+💡 Tip: Je kunt dit uitbreiden met bijvoorbeeld "Display" of "PowerOptions" als je dat wilt toestaan.
+
+🔒 Policy 2: Register Editor blokkeren
+Stap-voor-stap:
+Open je GPO → klik op Edit.
+
+Ga naar:
+User Configuration → Administrative Templates → System
+
+Zoek: "Prevent access to registry editing tools"
+
+Zet op: Enabled
+
+Keuzeoptie: laat staan op “Yes” (de registry kan niet worden gestart).
+
+💻 Policy 3: CMD en PowerShell blokkeren (voor niet-IT)
+💡 Let op: Deze GPO mag niet gelden voor de IT-afdeling, dus koppel de GPO alleen aan de juiste OU's of gebruik een WMI filter of security filtering.
+
+Stap-voor-stap:
+Ga naar:
+User Configuration → Administrative Templates → System
+
+Dubbelklik op: "Prevent access to the command prompt"
+
+Zet op: Enabled
+
+Optioneel: “Disable command prompt script processing” → Yes
+
+Ga daarna naar:
+User Configuration → Administrative Templates → System
+
+Zoek: "Don't run specified Windows applications"
+
+Zet op: Enabled
+
+Klik op Show en voeg toe:
+
+powershell.exe
+powershell_ise.exe
+cmd.exe
+
+
+
+👤 Policy 4: Guest-account uitschakelen
+Stap-voor-stap:
+Ga naar:
+Computer Configuration → Windows Settings → Security Settings → Local Policies → Security Options
+
+Zoek: "Accounts: Guest account status"
+
+Dubbelklik → Zet op: Disabled
+
+Extra controle (optioneel):
+
+Open in ADUC het gebruikersaccount “Guest” → Zet op “Account is disabled”.
+
+🔁 Policy 5: Geforceerde herstart bij updates
+Stap-voor-stap:
+Ga naar:
+Computer Configuration → Administrative Templates → Windows Components → Windows Update → Windows Update for Business
+
+Dubbelklik op: "Always automatically restart at the scheduled time"
+
+Zet op: Enabled
+
+Terug in hetzelfde pad, stel eventueel ook dit in:
+
+"Specify active hours" → bijv. 08:00 tot 17:00
+
+"No auto-restart with logged on users for scheduled installations" → Enabled
+(voorkomt dat gebruikers tijdens werk onderbroken worden)
+
+📌 Extra Tips voor GPO’s toepassen
+Forceer GPO-update op clients:
+Log in op een client → open CMD → typ: gpupdate /force
+
+Check of GPO werkt:
+CMD → typ: gpresult /r
+Hiermee zie je welke policies actief zijn voor een gebruiker of computer.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+roaming profiles 
+✅ Stap 1: Maak de map aan op de server
+Open Verkenner op je Windows Server.
+
+Ga naar een schijf met genoeg opslag, bijv. D:\.
+
+Maak een nieuwe map, noem deze bijvoorbeeld:
+
+Profiles
+Je pad is nu bijv.: D:\Profiles
+Stap 2: Map delen
+Rechtermuisklik op de map Profiles → Kies Eigenschappen.
+
+Ga naar het tabblad Delen.
+
+Klik op de knop Geavanceerd delen....
+
+Vink aan: Deze map delen.
+
+Geef een naam zoals: profiles$
+(het $-teken maakt de share verborgen op het netwerk).
+
+Klik op Machtigingen...
+
+Verwijder "Everyone".
+
+Klik op Toevoegen → typ: Authenticated Users → OK
+
+Selecteer Authenticated Users, geef Alleen-lezen UIT en Volledig beheer + Wijzigen AAN.
+
+Klik op Toepassen en OK totdat je uit het scherm bent.
+
+
+
