@@ -1,0 +1,182 @@
+1. Server-side voorbereiding
+🔹 A. Maak een gedeelde map aan op de server
+Bijvoorbeeld op \\SERVER01\Profiles$
+
+Ga op de server naar Verkenner → C:\
+
+Maak een map aan: Profiles$
+
+Deel deze map:
+
+Rechtermuisknop > Eigenschappen > Tab Delen > Geavanceerd delen
+
+Vink aan: ✅ "Deze map delen"
+
+Share name: Profiles$ (de $ maakt het verborgen)
+
+Rechten instellen:
+
+Voeg toe: Authenticated Users → ✅ Lezen en schrijven
+
+Voeg toe: Administrators → ✅ Volledige controle
+
+🔹 B. NTFS-beveiliging instellen
+Ga naar tabblad Beveiliging
+
+Verwijder "Everyone"
+
+Voeg toe: Domeingebruikers of specifieke gebruikers
+
+Geef: ✅ Lezen/Schrijven (Modify)
+
+✅ 2. Active Directory profielinstelling
+Voor elke gebruiker die een roaming profiel moet gebruiken:
+
+Open Active Directory Users and Computers
+
+Zoek de gebruiker, klik met rechts → Properties
+
+Ga naar tabblad Profile
+
+In het veld Profile Path, vul in:
+
+ruby
+Kopiëren
+Bewerken
+\\SERVER01\Profiles$\%username%
+🔁 %username% wordt automatisch vervangen door de inlognaam
+
+Klik op OK of Apply
+
+✅ 3. Client-pc voorbereiding
+De client-pc's moeten:
+
+Lid zijn van het domein
+
+Toegang hebben tot de share op de server
+
+Bijv. vanuit een client: \\SERVER01\Profiles$ moet bereikbaar zijn
+
+✅ 4. Controleer firewall & DNS
+🔹 A. Firewall
+Je moet toegang toestaan:
+
+Van CLIENTS naar SERVERS
+
+TCP poort 445 (SMB) moet open staan
+
+👉 Controleer dat in je policy:
+
+Policy Name	Poort 445 (SMB)	NAT	Logging
+Clients_to_Servers	✅ toegestaan	❌ Uit	✅ Aan
+
+🔹 B. DNS
+Zorg dat de client-pc’s de DNS-server van het domein gebruiken, meestal de Windows Server zelf (bijv. 192.168.20.2).
+
+✅ 5. Profiel testen
+Log in als domeingebruiker op een client-pc
+
+Pas iets aan op het bureaublad
+
+Log uit
+
+Log in op een andere client-pc (of dezelfde na reboot)
+
+De wijziging moet zichtbaar blijven = ✅ Roaming profile werkt
+
+
+
+
+
+
+
+domeinjoinen
+
+
+
+ Voorwaarden voordat je begint
+Zorg ervoor dat:
+
+De client-pc zit in het juiste VLAN (CLIENTS).
+
+De DNS-server op de client is ingesteld op de IP van de domain controller (DC) — bijv. 192.168.20.2.
+
+❗ Geen externe DNS gebruiken zoals 8.8.8.8, anders lukt de domeinjoin niet.
+
+Je weet de:
+
+Domeinnaam (bijv. BEDRIJF.local)
+
+Admin-gebruikersnaam en wachtwoord van het domein
+
+💻 Client-pc toevoegen aan domein (Windows 10/11)
+🔹 Stap 1: Netwerkverbinding controleren
+Open CMD op de client:
+
+bash
+Kopiëren
+Bewerken
+ping domeincontrollernaam
+ping domeinnaam.local
+En test toegang tot de profiel-share:
+
+bash
+Kopiëren
+Bewerken
+\\servernaam\Profiles$
+🔹 Stap 2: DNS-server juist instellen
+Open Netwerkcentrum > Adapterinstellingen wijzigen
+
+Rechtsklik op je netwerkadapter > Eigenschappen
+
+Dubbelklik op Internet Protocol versie 4 (TCP/IPv4)
+
+Vul in:
+
+Voorkeurs-DNS: IP van je domain controller (bijv. 192.168.20.2)
+
+Alternatief DNS: leeg laten of een tweede DC indien beschikbaar
+
+🔹 Stap 3: Client lid maken van het domein
+Open Instellingen > Systeem > Info
+
+Klik op Domein of werkgroep wijzigen > Deze pc hernoemen of aan domein toevoegen
+
+Kies: ✅ Domein
+
+Vul in: BEDRIJF.local (jouw domeinnaam)
+
+Klik op Volgende
+
+Voer in:
+
+Domeingebruiker met join-rechten, bijv. admin@bedrijf.local
+
+Wachtwoord
+
+Na succesvolle join: klik op OK
+
+Je krijgt de melding: "Welkom bij het domein BEDRIJF"
+
+Herstart de pc
+
+👤 Na herstart: Inloggen op het domein
+Klik op Andere gebruiker
+
+Voer in:
+
+Gebruikersnaam: BEDRIJF\gebruikersnaam
+
+Wachtwoord
+
+De client maakt nu het roaming profiel aan (mits correct ingesteld).
+
+
+
+
+
+
+
+
+
+
