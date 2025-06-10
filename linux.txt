@@ -49,3 +49,173 @@ groups gebruikersnaam
 
 Een gebruiker aan een groep toevoegen
 sudo usermod -aG groepsnaam gebruikersnaam
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Stap 1: Ubuntu-server voorbereiden
+Update je systeem:
+
+bash
+Kopiëren
+Bewerken
+sudo apt update && sudo apt upgrade -y
+Installeer benodigde pakketten:
+
+bash
+Kopiëren
+Bewerken
+sudo apt install apache2 php libapache2-mod-php php-mysqli unzip mariadb-server -y
+🧩 Stap 2: MySQL database voor HESK
+Start en beveilig MariaDB:
+
+bash
+Kopiëren
+Bewerken
+sudo mysql_secure_installation
+Login en maak de database:
+
+bash
+Kopiëren
+Bewerken
+sudo mysql -u root -p
+In de MySQL-prompt:
+
+sql
+Kopiëren
+Bewerken
+CREATE DATABASE hesk_db;
+CREATE USER 'hesk_user'@'localhost' IDENTIFIED BY 'SterkWachtwoord123!';
+GRANT ALL PRIVILEGES ON hesk_db.* TO 'hesk_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+🌐 Stap 3: Download en installeer HESK
+Download HESK:
+
+bash
+Kopiëren
+Bewerken
+cd /tmp
+wget https://www.hesk.com/downloads/hesk_latest.zip
+unzip hesk_latest.zip
+sudo mv hesk /var/www/html/servicedesk
+Zet juiste rechten:
+
+bash
+Kopiëren
+Bewerken
+sudo chown -R www-data:www-data /var/www/html/servicedesk
+sudo chmod -R 755 /var/www/html/servicedesk
+🌍 Stap 4: Apache configureren
+Maak een virtual host aan:
+
+bash
+Kopiëren
+Bewerken
+sudo nano /etc/apache2/sites-available/servicedesk.conf
+Inhoud:
+
+apache
+Kopiëren
+Bewerken
+<VirtualHost *:80>
+    ServerAdmin webmaster@casaease.local
+    DocumentRoot /var/www/html/servicedesk
+    ServerName servicedesk.casaease.local
+
+    <Directory /var/www/html/servicedesk>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/servicedesk_error.log
+    CustomLog ${APACHE_LOG_DIR}/servicedesk_access.log combined
+</VirtualHost>
+Activeer site en herstart Apache:
+
+bash
+Kopiëren
+Bewerken
+sudo a2ensite servicedesk.conf
+sudo systemctl reload apache2
+⚙️ Stap 5: Webconfiguratie van HESK
+Open in de browser: http://servicedesk.casaease.local/install
+
+Volg de installatiewizard:
+
+Database: hesk_db
+
+Gebruiker: hesk_user
+
+Wachtwoord: SterkWachtwoord123!
+
+Admin-account aanmaken
+
+Verwijder daarna de install/ map:
+
+bash
+Kopiëren
+Bewerken
+sudo rm -rf /var/www/html/servicedesk/install
+🧭 Stap 6: DNS A-record toevoegen in Windows Server
+Volg deze stappen op je DNS-server:
+
+Open DNS Manager
+
+Ga naar de juiste zone (bijv. casaease.local)
+
+Klik rechts > New Host (A or AAAA)
+
+Naam: servicedesk
+
+IP-adres: het interne IP van de Ubuntu-server (bijv. 192.168.20.50)
+
+Klik Add Host
+
+➡️ Test vanaf een client:
+
+bash
+Kopiëren
+Bewerken
+ping servicedesk
+👥 Stap 7: Gebruikers uit OU=ICT toegang geven
+Je kunt in HESK handmatig accounts aanmaken voor gebruikers uit de OU=ICT. Indien je LDAP-integratie niet nodig hebt, volg deze stappen:
+
+Log in als admin op HESK
+
+Ga naar "Users" > "Add New User"
+
+Voeg gebruikers toe met:
+
+Emailadres
+
+Wachtwoord
+
+Rol: Staff / Admin (afhankelijk van bevoegdheden)
+
+Als je LDAP-integratie wél wil gebruiken (AD-koppeling), dan kan dit via de Hesk Mods for HESK, maar dat vereist extra setup.
+
+✅ Klaar! Samenvatting:
+Onderdeel	Status
+Apache + PHP	✅
+MySQL / MariaDB	✅
+HESK Webapp	✅
+DNS A-record	✅
+Gebruiker toegevoegd	✅
+
+
