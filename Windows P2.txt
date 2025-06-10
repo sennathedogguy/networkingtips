@@ -1,0 +1,160 @@
+ALS EERST Server static ip & static dns geven voor forwarder
+
+
+1️⃣ Windows Server Installeren en Domein Instellen
+Start de Windows Server VM op.
+
+Open Server Manager > Add Roles and Features.
+
+Klik op Next tot je bij Server Roles komt.
+
+Vink "Active Directory Domain Services" aan en klik op Next > Install.
+
+Na installatie:
+
+Klik op "Promote this server to a domain controller".
+
+Kies "New Forest" en vul in:
+
+Domeinnaam: (DOMEINNAAM)
+
+NetBIOS Name: (DOMEINNAAM)
+
+Klik op Next en voltooi de installatie.
+
+✅ Je server is nu een domeincontroller!
+
+2️⃣ Organizational Units (OU’s) en Gebruikers Aanmaken
+Open Active Directory Users & Computers.
+
+Klik op Domeinnaam > New Organizational Unit.
+
+Maak de volgende OU’s aan:
+
+OU=Servers
+
+OU=Clients
+
+OU=Afdelingen (Marketing, HR, IT, enz.)
+
+Klik met rechts op een OU en kies "New User" om gebruikers aan te maken.
+
+3️⃣ DHCP Instellen
+Open Server Manager > Tools > DHCP.
+
+Klik rechts op de server en kies New Scope.
+
+Vul in:
+
+Start IP: (DHCP_BEREIK_START)
+
+End IP: (DHCP_BEREIK_STOP)
+
+Subnet Mask: (SUBNETMASKER)
+
+Default Gateway: (FIREWALL_IP)
+
+Klik op Next en voltooi de setup.
+
+
+
+Open DNS Manager (dnsmgmt.msc)
+
+Rechtsklik op de servernaam > Eigenschappen
+
+Ga naar het tabblad Forwarders
+
+Klik op Bewerken...
+
+Voeg externe DNS-servers toe, bijvoorbeeld:
+
+1.1.1.1 (Cloudflare)
+
+8.8.8.8 (Google)
+
+Klik op OK en sluit het venster
+
+4️⃣ VPN Instellen
+Open Server Manager > Add Roles and Features.
+
+Voeg toe:
+
+Remote Access
+
+Routing and Remote Access
+
+Group Policies (GPO’s) die we moeten instellen:
+CMD (Command Prompt) uitschakelen:
+
+GPO: CMD_Block
+
+Pad:
+
+pgsql
+Kopiëren
+Bewerken
+User Configuration > Policies > Administrative Templates > System > Prevent access to the command prompt
+Zet op: Enabled
+
+USB-opslag blokkeren:
+
+GPO: USB_Block
+
+Pad:
+
+pgsql
+Kopiëren
+Bewerken
+Computer Configuration > Administrative Templates > System > Removable Storage Access > All Removable Storage Classes: Deny All Access
+Zet op: Enabled
+
+Software-installaties beperken:
+
+GPO: Software_Restrict
+
+Pad:
+
+pgsql
+Kopiëren
+Bewerken
+Computer Configuration > Windows Settings > Security Settings > Software Restriction Policies
+Zet op: Enabled
+
+Minimale en maximale wachtwoordlengte instellen:
+
+GPO: Password_Policy
+
+Pad:
+
+pgsql
+Kopiëren
+Bewerken
+Computer Configuration > Policies > Windows Settings > Security Settings > Account Policies > Password Policy
+Min. lengte: 12 tekens
+
+Max. leeftijd: 90 dagen
+
+Anonymous SID Enumeration uitschakelen (extra beveiliging):
+
+GPO: SID_Enumeration_Block
+
+Pad:
+
+pgsql
+Kopiëren
+Bewerken
+Computer Configuration > Policies > Windows Settings > Security Settings > Local Policies > Security Options > Network access: Do not allow anonymous enumeration of SAM accounts and shares
+Zet op: Enabled
+
+Open Routing and Remote Access, klik rechts en kies Enable.
+
+Configureer VPN-toegang voor gebruikers.
+
+172.16.20.55
+
+255.255.254.0
+
+172.16.21.254
+
+172.16.0.5
+172.16.0.51
