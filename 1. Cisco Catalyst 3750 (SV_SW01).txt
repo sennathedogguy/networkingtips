@@ -1,0 +1,170 @@
+1. Cisco Catalyst 3750 (SV_SW01)
+A. Voorbereiding
+Zorg dat de PRTG-server (192.168.2.10) via VLAN 100 bij de switch kan.
+
+Verifieer management-SVI (VLAN 100) op de switch: 192.168.2.5/28, gateway 192.168.2.14.
+
+B. CLI-configuratie
+bash
+Kopiëren
+Bewerken
+Switch> enable
+Switch# configure terminal
+
+! — 1) Management-SVI
+Switch(config)# interface vlan 100
+Switch(config-if)# ip address 192.168.2.5 255.255.255.240
+Switch(config-if)# no shutdown
+Switch(config-if)# exit
+
+! — 2) Gateway
+Switch(config)# ip default-gateway 192.168.2.14
+
+! — 3) SNMP basics
+Switch(config)# snmp-server community public RO
+Switch(config)# snmp-server host 192.168.2.10 version 2c public
+
+
+Switch(config)# end
+Switch# write memory
+C. In PRTG toevoegen
+Devices → Add Device
+
+Hostname: SV_SW01
+
+IP: 192.168.2.5
+
+Credentials: SNMP v2c, community = public
+
+Sensor-templates:
+
+SNMP CPU Load → Threshold Critical > 75% voor ≥ 30 s
+
+SNMP Memory → Critical > 70% voor ≥ 30 s
+
+SNMP System Uptime → Warning/Critical als > 30 dagen ononderbroken
+
+SNMP Interfaces (Status Discovery) → Warning als “down” of “err-disabled”
+
+📘 2. FortiGate 30E (SV_FW01)
+A. Voorbereiding
+Management-VLAN (100) interface IP: 192.168.2.14/28
+
+Zorg dat je admin-account SNMP en HTTPS/SSH mag gebruiken.
+
+B. SNMP inschakelen in GUI
+Log in op https://192.168.2.14.
+
+Navigeer naar System → SNMP.
+
+Vink Enable SNMP Agent aan.
+
+Onder Community → Create New:
+
+Name: public
+
+Version: v2c
+
+Community String: public
+
+Hosts: Add → 192.168.2.10/32 (Read)
+
+OK.
+
+
+
+
+Ga naar Network → Interfaces, open VLAN100:
+
+Administrative Access: vink SNMP, HTTPS, SSH, PING aan.
+
+Apply en Save.
+
+C. In PRTG toevoegen
+Add Device
+
+Hostname: SV_FW01
+
+IP: 192.168.2.14
+
+SNMP v2c / public
+
+Sensor-lijst:
+
+SNMP CPU Load (same thresholds als switch)
+
+SNMP Memory (> 70% / ≥ 30 s)
+
+Ping Sensor → Critical als “down” (firewall niet bereikbaar)
+
+SNMP Traffic op WAN-poort → Critical als throughput = 0 B/s > 10 s
+
+📘 3. Windows Server (SV_DC1)
+A. Rollen & PRTG-Probe
+Active Directory & DNS al geïnstalleerd in deel 1.
+
+Download en installeer PRTG Remote Probe (standaard Local Probe is OK) op deze server.
+
+Herstart en open PRTG-webinterface.
+
+B. Credentials instellen
+In PRTG: Setup → Credentials for Windows Systems
+
+Username: Alfa\Administrator
+
+Password: je AD-admin wachtwoord
+
+C. Device toevoegen
+Devices → Add Device
+
+Hostname: SV_DC1
+
+IP: 192.168.10.20 (volgens IP-plan)
+
+Windows Credentials
+
+D. Sensor-configuratie
+Sensortype	Object	Thresholds
+Ping Sensor	—	Critical bij “down”
+WMI Processor Load	% Processor Time – Total	Warning > 75%, Critical > 90%
+WMI Memory	% Committed Bytes In Use	Warning > 70%, Critical > 85%
+WMI Logical Disk Free	C:\ vrije ruimte	Warning < 15%, Critical < 5%
+Windows Service Sensor	DHCP Server, DNS Server (“Running”)	Warning als “Stopped”
+
+📘 4. Nextcloud Server (SV_NC01)
+A. Netwerk én service check
+IP volgens plan: 192.168.10.50/28.
+
+B. Device toevoegen
+Devices → Add Device
+
+Hostname: SV_NC01
+
+IP: 192.168.10.50
+
+(Gebruik Ping-only credentials)
+
+C. Sensoren
+Sensortype	Doel	Threshold
+Ping Sensor	Beschikbaarheid	Critical als “down” voor ≥ 5 s
+HTTP Sensor	Poort 80 (Nextcloud web)	Warning/Critical bij status ≠ 200
+HTTP Sensor (HTTPS, poort 443)	Beveiligt webinterface	idem
+
+Extra: Je kunt een SNMP Agent installeren op Nextcloud-VM (Linux) en dan SNMP Disk/CPU toevoegen, maar voor examen is Ping+HTTP meestal genoeg.
+
+✅ Test- & Validatiestappen
+Switch:
+
+interface fa0/1 → shutdown → zie SNMP Interface sensor Warning.
+
+FortiGate:
+
+Disable SNMP op VLAN100 → PRTG Ping + SNMP sensors Down.
+
+Windows-DC:
+
+Stop de DNS-service → Windows Service sensor “Stopped” alarm.
+
+Nextcloud:
+
+systemctl stop apache2 (of nginx) → HTTP sensor alarm binnen 5 s.
