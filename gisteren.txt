@@ -1,0 +1,102 @@
+FORTIGATE
+
+System administratior 
+
+create new
+
+rest api admin
+
+naam ()
+
+profile 
+name 
+
+create read read etc etc
+
+
+pki group UIT
+
+
+
+Trusted Hosts==  vlan server PREFIX vlan
+
+
+
+
+copy API KEY
+
+
+
+devices 
+
+
+
+Naar PRTG
+
+ALL
+
+
+
+
+Settings
+ Credintal for fortigate 
+
+inherit uit
+
+
+api token plakje er in
+
+
+system>SNMP>SNMP AGENT>naam descrp>lcatie>SNMP V1/v2
+
+create new>
+
+communtity public
+ip address 192.168.10.20
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+switch PRTG
+! — 3) SNMP basics
+Switch(config)# snmp-server community public RO
+
+
+
+
+
+
+
+
+PRTG
+
+device add
+device
+
+
+
+network discovery
+
+EXACTE NAAM VAN FORTI 
+
+
+Firewall interface vlan 100 192.168.25.14
+
+
+
+
