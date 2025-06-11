@@ -1,0 +1,211 @@
+1. Voorbereiding in PRTG
+Log in op je PRTG-server (http://<IP-adres>).
+
+Controleer onder Setup » System Administration » Probes dat de Local Probe actief is (staat standaard aan).
+
+Ga naar Setup » System Administration » Notification Delivery en zorg dat je e-mail notificaties of andere delivery-methodes hebt ingesteld.
+
+2. Algemeen: Device toevoegen
+Voor elk apparaat herhaal je:
+
+Klik links in de boom op Devices.
+
+Klik op de drie puntjes naast Local Probe en kies Add Device.
+
+Vul in:
+
+Device Name: bv. SV_SW01
+
+IP Address/DNS Name: het management-IP uit je IP-plan
+
+Probe: Local Probe
+
+Onder Credentials for SNMP Devices (of Windows devices) kies je de juiste inloggegevens:
+
+SNMP v2c → community public
+
+Windows Credentials → AD-administrator + wachtwoord
+
+Klik op Create.
+
+
+
+
+
+3. Switch (SV_SW01) ­– VLAN 100, IP 192.168.2.5
+3.1 CPU-gebruik
+Navigeer in de Device-boom naar SV_SW01.
+
+Klik op Add Sensor.
+
+Zoek op “SNMP CPU” en selecteer SNMP CPU Load.
+
+Klik Continue, kies bij SNMP Version v2c en community public.
+
+Onder Scanning Interval laat je standaard (60 s).
+
+In Thresholds:
+
+Limit Type: Percent
+
+Channel: 5 Minutes Load (of Total CPU)
+
+Warning at: 70%
+
+Error at: 75%
+
+Klik Create.
+
+
+
+
+3.2 Geheugen-gebruik
+Add Sensor, zoek “SNMP Memory”.
+
+Kies SNMP Memory.
+
+Zelfde credentials.
+
+Thresholds:
+
+Warning: 60%
+
+Error: 70%
+
+3.3 Uptime
+Add Sensor, zoek “Uptime”.
+
+Kies SNMP System Uptime.
+
+Maak geen thresholds (of stel Error in als < 0 dagen – optioneel).
+
+Klik Create.
+
+3.4 Poort-status
+Add Sensor, zoek “Interface Status”.
+
+Kies SNMP Interface Status.
+
+Laat PRTG ALL Interfaces autodiscoveren.
+
+Klik Continue.
+
+Onder Thresholds zet je “Down” op Warning.
+
+Klik Create.
+
+4. Firewall (SV_FW01) ­– VLAN 14,20,100
+4.1 CPU-gebruik & geheugen
+Herhaal 3.1 en 3.2 op device SV_FW01 (IP 192.168.2.14).
+
+4.2 Beschikbaarheid
+Add Sensor, zoek “Ping”.
+
+Kies Ping.
+
+Scanning Interval 30 s.
+
+Thresholds: bij 3 opeenvolgende packet losses → Error.
+
+4.3 WAN-poort verkeer
+Add Sensor, zoek “SNMP Traffic”.
+
+Kies SNMP Traffic (Ingress + Egress).
+
+Selecteer in de drop-down de WAN-interface (bijv. wan1).
+
+Thresholds:
+
+Warning: < 1 B/s
+
+Error: < 1 B/s gedurende 10 s
+
+Klik Create.
+
+5. Windows-DC (SV_DC1) ­– IP 192.168.10.20
+5.1 Ping
+Add Sensor → Ping → standaard → Create.
+
+5.2 CPU & Memory via WMI
+Add Sensor, zoek “WMI CPU”.
+
+Kies WMI Processor Load.
+
+Thresholds: Warning 75%, Error 90%.
+
+Add Sensor, zoek “WMI Memory”.
+
+Kies WMI Memory.
+
+Thresholds: Warning 70%, Error 85%.
+
+5.3 Schijfruimte
+Add Sensor, zoek “WMI Logical Disk Free”.
+
+Kies de C:-drive.
+
+Thresholds:
+
+Warning: 15% vrije ruimte
+
+Error: 5% vrije ruimte.
+
+5.4 Windows-services
+Add Sensor, zoek “Windows Service”.
+
+Selecteer de services DHCP Server en DNS Server.
+
+Status “Running” is OK, “Stopped” is Error.
+
+6. Nextcloud-server (SV_NC01) ­– IP 192.168.10.50
+6.1 Beschikbaarheid (Ping)
+Add Sensor → Ping → Scanning Interval 10 s → Error na 3 mislukte pings → Create.
+
+6.2 HTTP/HTTPS-check
+Add Sensor, zoek “HTTP”.
+
+Kies HTTP Sensor.
+
+URL: http://192.168.10.50
+
+Scanning Interval 30 s.
+
+Thresholds:
+
+Response Time Warning 2 s, Error 5 s.
+
+Statuscode ≠ 200 → Error.
+
+Herhaal voor HTTPS met https://192.168.10.50.
+
+7. Notifications & Triggers
+Voor elke kritieke sensor stel je in:
+
+Open de sensor » tabblad Notifications.
+
+Klik op Add State Trigger.
+
+Kies bij State: “Down” of “Error”.
+
+Action: Send Email (of SMS) → selecteer je “Critical Alert” template.
+
+Delay: 30 s (indien gewenst).
+
+Save.
+
+Je ziet nu onder Notification Triggers een regel staan.
+
+8. Controleren en Documenteren
+Schakel op je switch een poort uit en kijk of SNMP Interface Warning geeft.
+
+Stop de DNS-service op de DC en controleer Windows Service sensor.
+
+Verwijder Nextcloud-HTTP service en zie HTTP Sensor falen.
+
+Maak screenshots van:
+
+Sensor-overzicht met groen/oranje/rood
+
+Een actieve melding in je notificatielog
+
+Zo heb je alle sensoren helemaal klaarstaan voor PRTG volgens de opdracht én je IP-plan! Veel succes!
